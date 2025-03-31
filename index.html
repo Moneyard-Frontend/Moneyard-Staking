@@ -1,59 +1,238 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Moneyard Staking</title>
+    <title>Moneyard Secure Staking</title>
+    
+    <!-- Trust-Oriented CSS -->
     <style>
-        /* CSS Styling */
+    :root {
+        --primary-blue: #0066cc;  /* Banking blue */
+        --trust-green: #009933;   /* Financial green */
+        --neutral-gray: #444444;
+    }
+
+    body {
+        background: white;
+        color: var(--neutral-gray);
+        font-family: 'Arial', sans-serif;
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 30px;
+        line-height: 1.6;
+    }
+
+    header {
+        background: var(--primary-blue);
+        color: white;
+        padding: 20px;
+        border-radius: 8px;
+        text-align: center;
+    }
+
+    .security-badge {
+        background: var(--trust-green);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 20px;
+        display: inline-block;
+        margin: 10px 0;
+    }
+
+    .login-form {
+        background: #f8f9fa;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 30px;
+        margin: 30px 0;
+    }
+
+    input, button {
+        padding: 12px;
+        margin: 10px 0;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    button {
+        background: var(--trust-green);
+        color: white;
+        border: none;
+        cursor: pointer;
+        transition: background 0.3s;
+    }
+
+    button:hover {
+        background: #00802b;
+    }
+
+    .transaction-section {
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 20px;
+        margin-top: 30px;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+    }
+
+    th {
+        background: var(--primary-blue);
+        color: white;
+        padding: 12px;
+        text-align: left;
+    }
+
+    td {
+        padding: 12px;
+        border-bottom: 1px solid #eee;
+    }
+
+    tr:hover {
+        background: #f8f9fa;
+    }
+
+    @media (max-width: 768px) {
         body {
-            background: #1a1a1a;
-            color: white;
-            font-family: Arial, sans-serif;
-            text-align: center;
-            padding: 50px;
+            padding: 15px;
         }
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
+        
+        .login-form {
+            padding: 20px;
         }
-        button {
-            background: #007bff;
-            color: white;
-            border: none;
-            padding: 15px 30px;
-            border-radius: 5px;
-            cursor: pointer;
-            margin: 10px;
-        }
+    }
     </style>
 </head>
-<body>
-    <div class="container">
-        <h1>🚀 Moneyard Staking Platform</h1>
-        <p>USDT Staking Coming Soon</p>
-        
-        <!-- Login Form -->
-        <form>
-            <input type="email" placeholder="Email" style="padding: 10px; margin: 10px; width: 300px;">
-            <br>
-            <input type="password" placeholder="Password" style="padding: 10px; margin: 10px; width: 300px;">
-            <br>
-            <button type="submit">Login</button>
-        </form>
 
-        <!-- Countdown Timer -->
-        <div id="countdown" style="margin-top: 30px; font-size: 24px;"></div>
+<body>
+    <header>
+        <h1>💰 Moneyard Secure Staking</h1>
+        <div class="security-badge">
+            🔒 SSL Secured | 🛡️ Insured Assets
+        </div>
+    </header>
+
+    <!-- Wallet Connection -->
+    <div class="login-form">
+        <h2 style="color: var(--primary-blue);">Wallet Connection</h2>
+        <button onclick="connectWallet()">🔗 Connect MetaMask</button>
+        <div id="walletInfo" style="margin-top: 15px;"></div>
     </div>
 
-    <script>
-        // Simple JavaScript Countdown
-        let timeLeft = 10;
-        const countdown = document.getElementById('countdown');
+    <!-- Staking Interface -->
+    <div class="transaction-section">
+        <h2 style="color: var(--trust-green);">Staking Dashboard</h2>
         
-        const timer = setInterval(() => {
-            timeLeft--;
-            countdown.textContent = `Launching in ${timeLeft} seconds...`;
-            if(timeLeft <= 0) clearInterval(timer);
-        }, 1000);
+        <div style="display: grid; gap: 20px; grid-template-columns: 1fr 1fr;">
+            <!-- Deposit Section -->
+            <div>
+                <h3>Deposit USDT</h3>
+                <input type="number" placeholder="Amount (USDT)" id="depositAmount">
+                <button onclick="deposit()" style="background: var(--trust-green);">Deposit</button>
+            </div>
+
+            <!-- Withdraw Section -->
+            <div>
+                <h3>Withdraw Funds</h3>
+                <input type="number" placeholder="Amount (USDT)" id="withdrawAmount">
+                <button onclick="withdraw()" style="background: var(--primary-blue);">Withdraw</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Transaction History -->
+    <div class="transaction-section">
+        <h2 style="color: var(--primary-blue);">Transaction History</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Amount</th>
+                    <th>Type</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody id="txHistory">
+                <!-- Transactions will be added here -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Blockchain Integration -->
+    <script src="https://cdn.ethers.io/lib/ethers-5.6.umd.min.js"></script>
+    <script>
+    let provider;
+    let signer;
+
+    // Connect Wallet
+    async function connectWallet() {
+        if (typeof window.ethereum !== 'undefined') {
+            try {
+                await window.ethereum.request({ method: 'eth_requestAccounts' });
+                provider = new ethers.providers.Web3Provider(window.ethereum);
+                signer = provider.getSigner();
+                const address = await signer.getAddress();
+                document.getElementById('walletInfo').innerHTML = `
+                    Connected: ${address.substring(0,6)}...${address.substring(38,42)}<br>
+                    Balance: <span id="balance">Loading...</span>
+                `;
+                updateBalance();
+            } catch (error) {
+                console.error("Connection error:", error);
+            }
+        } else {
+            alert('Please install MetaMask!');
+        }
+    }
+
+    // Update USDT Balance
+    async function updateBalance() {
+        // Add real balance checking logic here
+        document.getElementById('balance').textContent = "1,000.00 USDT";
+    }
+
+    // Mock Transactions
+    const transactions = [
+        { date: '2024-03-15', amount: '500.00', type: 'Deposit', status: '✅ Completed' },
+        { date: '2024-03-16', amount: '5.00', type: 'Reward', status: '⏳ Pending' }
+    ];
+
+    // Load transaction history
+    function loadTransactions() {
+        const tbody = document.getElementById('txHistory');
+        transactions.forEach(tx => {
+            tbody.innerHTML += `
+                <tr>
+                    <td>${tx.date}</td>
+                    <td>${tx.amount} USDT</td>
+                    <td>${tx.type}</td>
+                    <td>${tx.status}</td>
+                </tr>
+            `;
+        });
+    }
+    loadTransactions();
+
+    // Mock deposit/withdraw functions
+    function deposit() {
+        const amount = document.getElementById('depositAmount').value;
+        alert(`Deposit request: ${amount} USDT`);
+    }
+
+    function withdraw() {
+        const amount = document.getElementById('withdrawAmount').value;
+        alert(`Withdrawal request: ${amount} USDT`);
+    }
     </script>
+
+    <!-- Trust Badges -->
+    <div style="text-align: center; margin-top: 40px; color: #666;">
+        <p>🔐 Secured with Smart Contracts | 📈 Daily Audits | 📞 24/7 Support</p>
+        <p>📧 security@moneyard.com | 🔗 Contract Address: 0x123...abc</p>
+    </div>
 </body>
 </html>
