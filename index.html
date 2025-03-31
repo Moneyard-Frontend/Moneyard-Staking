@@ -1,238 +1,143 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
     <title>Moneyard Secure Staking</title>
-    
-    <!-- Trust-Oriented CSS -->
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.5.2/dist/web3.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <style>
-    :root {
-        --primary-blue: #0066cc;  /* Banking blue */
-        --trust-green: #009933;   /* Financial green */
-        --neutral-gray: #444444;
-    }
-
-    body {
-        background: white;
-        color: var(--neutral-gray);
-        font-family: 'Arial', sans-serif;
-        max-width: 1000px;
-        margin: 0 auto;
-        padding: 30px;
-        line-height: 1.6;
-    }
-
-    header {
-        background: var(--primary-blue);
-        color: white;
-        padding: 20px;
-        border-radius: 8px;
-        text-align: center;
-    }
-
-    .security-badge {
-        background: var(--trust-green);
-        color: white;
-        padding: 10px 20px;
-        border-radius: 20px;
-        display: inline-block;
-        margin: 10px 0;
-    }
-
-    .login-form {
-        background: #f8f9fa;
-        border: 1px solid #e0e0e0;
-        border-radius: 8px;
-        padding: 30px;
-        margin: 30px 0;
-    }
-
-    input, button {
-        padding: 12px;
-        margin: 10px 0;
-        border: 1px solid #ddd;
-        border-radius: 6px;
-        width: 100%;
-        box-sizing: border-box;
-    }
-
-    button {
-        background: var(--trust-green);
-        color: white;
-        border: none;
-        cursor: pointer;
-        transition: background 0.3s;
-    }
-
-    button:hover {
-        background: #00802b;
-    }
-
-    .transaction-section {
-        border: 1px solid #e0e0e0;
-        border-radius: 8px;
-        padding: 20px;
-        margin-top: 30px;
-    }
-
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 20px;
-    }
-
-    th {
-        background: var(--primary-blue);
-        color: white;
-        padding: 12px;
-        text-align: left;
-    }
-
-    td {
-        padding: 12px;
-        border-bottom: 1px solid #eee;
-    }
-
-    tr:hover {
-        background: #f8f9fa;
-    }
-
-    @media (max-width: 768px) {
-        body {
-            padding: 15px;
-        }
-        
-        .login-form {
-            padding: 20px;
-        }
-    }
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        section { margin: 20px 0; padding: 20px; border: 1px solid #ddd; border-radius: 8px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        td, th { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        .security-footer { margin-top: 30px; font-size: 0.9em; color: #666; }
     </style>
 </head>
-
 <body>
-    <header>
-        <h1>💰 Moneyard Secure Staking</h1>
-        <div class="security-badge">
-            🔒 SSL Secured | 🛡️ Insured Assets
+    <h1>Moneyard Secure Staking</h1>
+    <p>SSL Secured | Insured Assets</p>
+
+    <!-- Auth & Balances Section -->
+    <section id="auth-section">
+        <h2>Wallet Connection</h2>
+        <button onclick="connectWallet()">Connect MetaMask</button>
+        <div id="2fa-container" style="display: none; margin-top: 10px;">
+            <input type="text" id="2fa-code" placeholder="Enter 2FA Code">
+            <button onclick="verify2FA()">Verify</button>
         </div>
-    </header>
-
-    <!-- Wallet Connection -->
-    <div class="login-form">
-        <h2 style="color: var(--primary-blue);">Wallet Connection</h2>
-        <button onclick="connectWallet()">🔗 Connect MetaMask</button>
-        <div id="walletInfo" style="margin-top: 15px;"></div>
-    </div>
-
-    <!-- Staking Interface -->
-    <div class="transaction-section">
-        <h2 style="color: var(--trust-green);">Staking Dashboard</h2>
         
-        <div style="display: grid; gap: 20px; grid-template-columns: 1fr 1fr;">
-            <!-- Deposit Section -->
+        <div style="margin-top: 20px;">
+            <p>USDT Balance: <strong id="usdt-balance">0.00</strong></p>
+            <p>ETH Price: $<strong id="eth-price">0.00</strong></p>
+        </div>
+    </section>
+
+    <!-- Staking Dashboard -->
+    <section>
+        <h2>Staking Dashboard</h2>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
             <div>
                 <h3>Deposit USDT</h3>
-                <input type="number" placeholder="Amount (USDT)" id="depositAmount">
-                <button onclick="deposit()" style="background: var(--trust-green);">Deposit</button>
+                <input type="number" id="stake-amount" placeholder="Amount (USDT)">
+                <button onclick="stakeTokens()" style="margin-top: 10px;">Deposit</button>
             </div>
-
-            <!-- Withdraw Section -->
             <div>
                 <h3>Withdraw Funds</h3>
-                <input type="number" placeholder="Amount (USDT)" id="withdrawAmount">
-                <button onclick="withdraw()" style="background: var(--primary-blue);">Withdraw</button>
+                <input type="number" placeholder="Amount (USDT)">
+                <button style="margin-top: 10px;">Withdraw</button>
             </div>
         </div>
-    </div>
+    </section>
 
     <!-- Transaction History -->
-    <div class="transaction-section">
-        <h2 style="color: var(--primary-blue);">Transaction History</h2>
+    <section>
+        <h2>Transaction History</h2>
         <table>
-            <thead>
-                <tr>
-                    <th>Date</th>
-                    <th>Amount</th>
-                    <th>Type</th>
-                    <th>Status</th>
-                </tr>
-            </thead>
-            <tbody id="txHistory">
-                <!-- Transactions will be added here -->
-            </tbody>
+            <tr>
+                <th>Date</th>
+                <th>Amount</th>
+                <th>Type</th>
+                <th>Status</th>
+            </tr>
+            <tr>
+                <td>2024-03-15</td>
+                <td>$00.00 USDT</td>
+                <td>Deposit</td>
+                <td>Completed</td>
+            </tr>
+            <tr>
+                <td>2024-03-16</td>
+                <td>$.00 USDT</td>
+                <td>Reward</td>
+                <td>Pending</td>
+            </tr>
         </table>
+    </section>
+
+    <div class="security-footer">
+        <p>Secured with Smart Contracts | Daily Audits | 24/7 Support</p>
+        <p>Contact: security@moneyard.com | Contract Address: <span id="contract-address">0x123...abc</span></p>
     </div>
 
-    <!-- Blockchain Integration -->
-    <script src="https://cdn.ethers.io/lib/ethers-5.6.umd.min.js"></script>
     <script>
-    let provider;
-    let signer;
+        // Web3 Configuration
+        let web3;
+        let userAddress;
+        const CONTRACT_ADDRESS = '0x123...abc'; // Update with actual address
+        const CONTRACT_ABI = [...]; // Add your contract ABI
+        const USDT_CONTRACT = '0xdAC17F958D2ee523a2206206994597C13D831ec7';
 
-    // Connect Wallet
-    async function connectWallet() {
-        if (typeof window.ethereum !== 'undefined') {
-            try {
-                await window.ethereum.request({ method: 'eth_requestAccounts' });
-                provider = new ethers.providers.Web3Provider(window.ethereum);
-                signer = provider.getSigner();
-                const address = await signer.getAddress();
-                document.getElementById('walletInfo').innerHTML = `
-                    Connected: ${address.substring(0,6)}...${address.substring(38,42)}<br>
-                    Balance: <span id="balance">Loading...</span>
-                `;
-                updateBalance();
-            } catch (error) {
-                console.error("Connection error:", error);
+        async function connectWallet() {
+            if (window.ethereum) {
+                try {
+                    web3 = new Web3(window.ethereum);
+                    await window.ethereum.enable();
+                    const accounts = await web3.eth.getAccounts();
+                    userAddress = accounts[0];
+                    checkUSDTBalance();
+                    initPriceFeed();
+                    document.getElementById('2fa-container').style.display = 'block';
+                    document.getElementById('contract-address').textContent = CONTRACT_ADDRESS;
+                } catch (error) {
+                    console.error('Wallet connection failed:', error);
+                }
             }
-        } else {
-            alert('Please install MetaMask!');
         }
-    }
 
-    // Update USDT Balance
-    async function updateBalance() {
-        // Add real balance checking logic here
-        document.getElementById('balance').textContent = "1,000.00 USDT";
-    }
+        async function checkUSDTBalance() {
+            const contract = new web3.eth.Contract(ERC20_ABI, USDT_CONTRACT);
+            const balance = await contract.methods.balanceOf(userAddress).call();
+            document.getElementById('usdt-balance').textContent = 
+                (balance / 1e6).toFixed(2); // USDT has 6 decimals
+        }
 
-    // Mock Transactions
-    const transactions = [
-        { date: '2024-03-15', amount: '500.00', type: 'Deposit', status: '✅ Completed' },
-        { date: '2024-03-16', amount: '5.00', type: 'Reward', status: '⏳ Pending' }
-    ];
+        async function stakeTokens() {
+            const amount = document.getElementById('stake-amount').value;
+            const contract = new web3.eth.Contract(CONTRACT_ABI, CONTRACT_ADDRESS);
+            
+            await contract.methods.stake(web3.utils.toWei(amount, 'mwei')).send({
+                from: userAddress
+            });
+            alert('Deposit successful!');
+        }
 
-    // Load transaction history
-    function loadTransactions() {
-        const tbody = document.getElementById('txHistory');
-        transactions.forEach(tx => {
-            tbody.innerHTML += `
-                <tr>
-                    <td>${tx.date}</td>
-                    <td>${tx.amount} USDT</td>
-                    <td>${tx.type}</td>
-                    <td>${tx.status}</td>
-                </tr>
-            `;
-        });
-    }
-    loadTransactions();
+        async function initPriceFeed() {
+            try {
+                const response = await axios.get(
+                    'https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd'
+                );
+                document.getElementById('eth-price').textContent = 
+                    response.data.ethereum.usd.toFixed(2);
+            } catch (error) {
+                console.error('Price update failed:', error);
+            }
+        }
 
-    // Mock deposit/withdraw functions
-    function deposit() {
-        const amount = document.getElementById('depositAmount').value;
-        alert(`Deposit request: ${amount} USDT`);
-    }
-
-    function withdraw() {
-        const amount = document.getElementById('withdrawAmount').value;
-        alert(`Withdrawal request: ${amount} USDT`);
-    }
+        async function verify2FA() {
+            const code = document.getElementById('2fa-code').value;
+            // Add actual 2FA verification logic here
+            alert('2FA verification submitted (implement backend verification)');
+        }
     </script>
-
-    <!-- Trust Badges -->
-    <div style="text-align: center; margin-top: 40px; color: #666;">
-        <p>🔐 Secured with Smart Contracts | 📈 Daily Audits | 📞 24/7 Support</p>
-        <p>📧 security@moneyard.com | 🔗 Contract Address: 0x123...abc</p>
-    </div>
 </body>
 </html>
