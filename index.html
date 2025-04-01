@@ -1,16 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
 <head>
-    <title>Moneyard Secure Staking</title>
+    <title>Moneyard Staking</title>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://* 'unsafe-inline' 'unsafe-eval'">
-    <script src="https://unpkg.com/tronweb@4.1.0/dist/TronWeb.js"></script>
-    <script src="https://cdn.ethers.io/lib/ethers-5.6.umd.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-    <script>
-    window.onerror = function(message, url, line) {
-      alert(`JS Error: ${message}\nLine: ${line}`);
-      return true;
-    };
-    </script>
-    <!-- Rest of your styles -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: Arial;
+            text-align: center;
+            padding: 20px;
+        }
+        button {
+            padding: 15px;
+            background: #009933;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            margin: 10px;
+        }
+    </style>
 </head>
+<body>
+    <h1>Moneyard Staking</h1>
+    <button onclick="testConnection()">Test Connection</button>
+
+    <script>
+    // Basic Test Function
+    function testConnection() {
+        try {
+            alert('JavaScript is working!');
+            document.body.innerHTML += '<p style="color:green">✅ Connection Successful</p>';
+        } catch (error) {
+            document.body.innerHTML += `<p style="color:red">❌ Error: ${error.message}</p>`;
+        }
+    }
+    </script>
+</body>
+</html>
