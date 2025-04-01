@@ -1,34 +1,58 @@
-<script>
-let currentNetwork = 'BEP20';
-let userAddress = '';
-
-async function connectWallet() {
-  try {
-    // Detect MetaMask
-    if(window.ethereum) {
-      await window.ethereum.request({ method: 'eth_requestAccounts' });
-      userAddress = (await new ethers.providers.Web3Provider(window.ethereum).getSigner().getAddress());
-      currentNetwork = (await window.ethereum.chainId) === '0x38' ? 'BEP20' : 'OTHER';
-    }
-    // Detect TronLink
-    else if(window.tronWeb) {
-      userAddress = window.tronWeb.defaultAddress.base58;
-      currentNetwork = 'TRC20';
-    }
-    else {
-      throw new Error('No wallet detected!');
-    }
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Moneyard Staking</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: Arial;
+            text-align: center;
+            padding: 20px;
+        }
+        #connection-status {
+            color: green;
+            margin: 20px;
+        }
+    </style>
+    <script src="https://cdn.ethers.io/lib/ethers-5.6.umd.min.js"></script>
+</head>
+<body>
+    <h1>Moneyard Staking</h1>
     
-    document.getElementById('wallet-status').textContent = `Connected: ${userAddress.slice(0,6)}...`;
-    checkBalance();
-    
-  } catch(error) {
-    alert(`Connection Error: ${error.message}`);
-  }
-}
-
-// Update HTML
-<div class="auth-section">
-  <button onclick="connectWallet()">🔗 Connect Wallet</button>
-  <p id="wallet-status" style="margin-top: 10px; color: #666">Not connected</p>
+    <!-- Connection Section -->
+    <div id="auth-section">
+        <button onclick="connectWallet()" style="padding: 15px; background: #009933; color: white; border: none; border-radius: 8px;">
+            🔗 Connect Wallet
+        </button>
+        <p id="connection-status">Not connected</p>
     </div>
+
+    <script>
+    // Error Handling First
+    window.onerror = function(message) {
+        alert("JS Error: " + message);
+        return true;
+    };
+
+    async function connectWallet() {
+        try {
+            // Step 1: Detect Wallet
+            if(!window.ethereum) throw new Error("Install MetaMask!");
+            
+            // Step 2: Connect
+            await window.ethereum.request({ method: 'eth_requestAccounts' });
+            const provider = new ethers.providers.Web3Provider(window.ethereum);
+            const address = await provider.getSigner().getAddress();
+            
+            // Step 3: Update UI
+            document.getElementById('connection-status').innerHTML = 
+                `Connected: ${address.slice(0,6)}...${address.slice(-4)}`;
+                
+        } catch(error) {
+            alert("Connection Failed: " + error.message);
+        }
+    }
+    </script>
+</body>
+</html>
