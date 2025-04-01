@@ -24,52 +24,41 @@
         line-height: 1.6;
     }
 
-    /* Enhanced Security Features */
-    .auth-section {
+    .auth-section, .transaction-section {
         background: #f8f9fa;
         border: 1px solid #e0e0e0;
         border-radius: 8px;
         padding: 30px;
         margin: 30px 0;
-        position: relative;
     }
 
-    .2fa-overlay {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(255,255,255,0.9);
-        display: none;
+    button, input {
+        padding: 12px;
+        margin: 10px 0;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    button {
+        background: var(--trust-green);
+        color: white;
+        cursor: pointer;
+        transition: background 0.3s;
+    }
+
+    button:hover {
+        background: #00802b;
+    }
+
+    .tx-history {
+        margin-top: 30px;
         padding: 20px;
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
-
-    /* Password Recovery */
-    .recovery-options {
-        margin-top: 15px;
-        font-size: 0.9em;
-    }
-
-    /* Loading States */
-    .loading {
-        position: relative;
-        opacity: 0.7;
-        pointer-events: none;
-    }
-
-    .loading::after {
-        content: "⏳";
-        animation: spin 1s linear infinite;
-        position: absolute;
-        right: 10px;
-    }
-
-    @keyframes spin {
-        100% { transform: rotate(360deg); }
-    }
-
-    /* Existing styles from both versions integrated here */
     </style>
 
     <!-- Required Libraries -->
@@ -85,165 +74,122 @@
         </div>
     </header>
 
-    <!-- Enhanced Auth Section -->
+    <!-- Auth Section -->
     <div class="auth-section">
-        <div id="login-container">
-            <h2 style="color: var(--primary-blue);">Secure Access</h2>
-            
-            <!-- Login Form -->
-            <div id="email-login">
-                <input type="email" id="loginEmail" placeholder="Email Address">
-                <input type="password" id="loginPassword" placeholder="Password">
-                <button onclick="initLogin()">🔑 Login</button>
-                <div class="recovery-options">
-                    <a href="#forgot-password" onclick="showRecovery()">Forgot Password?</a> |
-                    <a href="#signup" onclick="showSignup()">Create Account</a>
-                </div>
-            </div>
-
-            <!-- Wallet Login -->
-            <div style="margin-top: 20px;">
-                <button onclick="connectWallet()">🔗 Connect Wallet</button>
-            </div>
-
-            <!-- 2FA Verification -->
-            <div id="2fa-container" class="2fa-overlay">
-                <h3>2FA Verification</h3>
-                <input type="text" id="2fa-code" placeholder="6-digit code">
-                <button onclick="verify2FA()">Verify</button>
-                <button onclick="cancel2FA()">Cancel</button>
-            </div>
+        <button onclick="connectWallet()">🔗 Connect Wallet</button>
+        <div id="2fa-container" style="display: none; margin-top: 15px;">
+            <input type="text" id="2fa-code" placeholder="6-digit code">
+            <button onclick="verify2FA()">Verify</button>
         </div>
-
-        <!-- Password Recovery -->
-        <div id="recovery-container" style="display: none;">
-            <h3>Password Recovery</h3>
-            <input type="email" id="recoveryEmail" placeholder="Registered Email">
-            <button onclick="sendRecovery()">Send Reset Link</button>
-            <div id="recovery-2fa" style="display: none; margin-top: 15px;">
-                <input type="text" id="recovery-code" placeholder="2FA Code">
-                <button onclick="confirmRecovery()">Confirm</button>
-            </div>
+        
+        <div style="margin-top: 20px;">
+            <p>USDT Balance: <strong id="usdt-balance">0.00</strong></p>
+            <p>ETH Price: $<strong id="eth-price">0.00</strong></p>
         </div>
     </div>
 
-    <!-- Rest of your existing interface remains similar with enhanced security -->
+    <!-- Staking Interface -->
+    <div class="transaction-section">
+        <h2>Staking Dashboard</h2>
+        <input type="number" id="stake-amount" placeholder="Amount (USDT)">
+        <button onclick="stakeTokens()">Deposit</button>
+        <input type="text" id="referral-code" placeholder="Referral Code (optional)" style="margin-top: 15px;">
+    </div>
 
-    <!-- Integrated Blockchain Script -->
+    <!-- Transaction History -->
+    <div class="tx-history">
+        <h3>Recent Transactions</h3>
+        <div id="tx-list"></div>
+    </div>
+
     <script>
-    // Security Constants
-    const CONTRACT_ADDRESS = '0x...'; // Replace with actual
+    // Configuration (Set in Fleek Environment Variables)
     const USDT_CONTRACT = '0xdAC17F958D2ee523a2206206994597C13D831ec7';
-    const API_ENDPOINT = 'https://api.moneyard.com/v1'; // Your backend
+    const ERC20_ABI = [/* USDT ABI Here */];
+    let provider, signer, userAddress;
 
-    // State Management
-    let authToken = null;
-    let tempSession = null;
-
-    // Enhanced Login Flow
-    async function initLogin() {
-        try {
-            const email = document.getElementById('loginEmail').value;
-            const password = document.getElementById('loginPassword').value;
-            
-            // Add validation
-            if (!validateEmail(email) || password.length < 8) {
-                showError('Invalid credentials');
-                return;
-            }
-
-            const response = await axios.post(`${API_ENDPOINT}/auth/login`, {
-                email,
-                password
-            });
-
-            if (response.data.requires2FA) {
-                show2FA();
-                tempSession = response.data.tempToken;
-            }
-        } catch (error) {
-            handleAuthError(error);
-        }
-    }
-
-    // Password Recovery Flow
-    async function sendRecovery() {
-        const email = document.getElementById('recoveryEmail').value;
-        if (!validateEmail(email)) return;
-
-        try {
-            await axios.post(`${API_ENDPOINT}/auth/recover`, { email });
-            document.getElementById('recovery-2fa').style.display = 'block';
-        } catch (error) {
-            handleAuthError(error);
-        }
-    }
-
-    // Enhanced Wallet Connection
     async function connectWallet() {
         try {
-            if (typeof window.ethereum === 'undefined') {
-                throw new Error('Wallet not found');
-            }
-
+            if (!window.ethereum) throw new Error("Wallet not found");
             await window.ethereum.request({ method: 'eth_requestAccounts' });
-          const provider = new ethers.providers.JsonRpcProvider(
-  "https://mainnet.infura.io/v3/" + process.env.REACT_APP_INFURA_KEY);
-            const signer = provider.getSigner();
-            const address = await signer.getAddress();
-            
-            // Init 2FA for wallet connection
-            show2FA();
-            await verifyWalletSession(address);
+            provider = new ethers.providers.Web3Provider(window.ethereum);
+            signer = provider.getSigner();
+            userAddress = await signer.getAddress();
+            init2FA();
+            updateBalances();
+            setupEventListeners();
         } catch (error) {
-            handleAuthError(error);
+            alert(error.message);
         }
     }
 
-    // 2FA Verification
+    async function updateBalances() {
+        try {
+            // USDT Balance
+            const usdtContract = new ethers.Contract(USDT_CONTRACT, ERC20_ABI, signer);
+            const balance = await usdtContract.balanceOf(userAddress);
+            document.getElementById('usdt-balance').textContent = 
+                (balance / 1e6).toFixed(2);
+
+            // ETH Price
+            const priceData = await axios.get(
+                'https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd'
+            );
+            document.getElementById('eth-price').textContent = 
+                priceData.data.ethereum.usd.toFixed(2);
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
+    async function stakeTokens() {
+        const amount = document.getElementById('stake-amount').value;
+        const referralCode = document.getElementById('referral-code').value;
+        try {
+            const usdtContract = new ethers.Contract(USDT_CONTRACT, ERC20_ABI, signer);
+            const tx = await usdtContract.transfer(
+                'YOUR_STAKING_CONTRACT_ADDRESS',
+                ethers.utils.parseUnits(amount, 6)
+            );
+            await tx.wait();
+            updateBalances();
+            if(referralCode) localStorage.setItem('referral', referralCode);
+        } catch (error) {
+            alert('Transaction failed: ' + error.message);
+        }
+    }
+
+    function setupEventListeners() {
+        const usdtContract = new ethers.Contract(USDT_CONTRACT, ERC20_ABI, provider);
+        usdtContract.on('Transfer', (from, to, value) => {
+            if(from.toLowerCase() === userAddress.toLowerCase() || 
+               to.toLowerCase() === userAddress.toLowerCase()) {
+                const txElement = document.createElement('div');
+                txElement.innerHTML = `
+                    <p>${new Date().toLocaleString()} - 
+                    ${ethers.utils.formatUnits(value, 6)} USDT</p>
+                `;
+                document.getElementById('tx-list').prepend(txElement);
+            }
+        });
+    }
+
+    // 2FA Implementation
+    function init2FA() {
+        const phone = prompt("Enter phone for SMS verification:");
+        if (phone) {
+            document.getElementById('2fa-container').style.display = 'block';
+        }
+    }
+
     async function verify2FA() {
         const code = document.getElementById('2fa-code').value;
-        if (!/^\d{6}$/.test(code)) {
-            showError('Invalid 2FA code');
-            return;
-        }
-
-        try {
-            const response = await axios.post(`${API_ENDPOINT}/auth/verify-2fa`, {
-                code,
-                tempSession
-            });
-
-            authToken = response.data.token;
-            initializeSession();
-        } catch (error) {
-            handleAuthError(error);
-        }
+        if (!/^\d{6}$/.test(code)) return alert('Invalid code');
+        alert('2FA Verified!'); // Replace with actual verification
     }
 
-    // Session Management
-    function initializeSession() {
-        // Store token securely
-        sessionStorage.setItem('authToken', authToken);
-        loadUserData();
-        setupSessionTimer();
-    }
-
-    // Security Helpers
-    function validateEmail(email) {
-        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-    }
-
-    function handleAuthError(error) {
-        console.error('Auth Error:', error);
-        showError(error.response?.data?.message || 'Authentication failed');
-    }
-
-    function showError(message) {
-        // Implement error display
-    }
+    // Auto-refresh every 60 seconds
+    setInterval(updateBalances, 60000);
     </script>
-
-    <!-- Existing Transaction and Staking Logic Here -->
 </body>
 </html>
